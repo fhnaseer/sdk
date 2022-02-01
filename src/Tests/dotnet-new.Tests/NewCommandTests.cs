@@ -44,7 +44,8 @@ namespace Microsoft.DotNet.New.Tests
             var tempDir = _testAssetsManager.CreateTestDirectory();
             var cmd = new DotnetCommand(Log).Execute("new", "--help");
             cmd.Should().Pass()
-                .And.HaveStdOutContaining("Usage: new [options]");
+                .And.HaveStdOutContaining("Usage:")
+                .And.HaveStdOutContaining("dotnet new [command] [options]");
         }
 
         [Fact]
