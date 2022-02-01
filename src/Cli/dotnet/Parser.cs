@@ -12,6 +12,7 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.DotNet.Tools;
 using Microsoft.DotNet.Tools.Format;
 using Microsoft.DotNet.Tools.Help;
@@ -114,6 +115,7 @@ namespace Microsoft.DotNet.Cli
             //           all of the parameters of their wrapped command by design)
             //           error. so `dotnet msbuild /t:thing` throws a parse error.
             // .UseParseErrorReporting(127)
+            .AddMiddleware((InvocationContext context, Func<InvocationContext, Task> next) => UseParseErrorReporting("new", context, next), MiddlewareOrder.ErrorReporting)
             .UseHelp()
             .UseHelpBuilder(context => DotnetHelpBuilder.Instance.Value)
             .UseLocalizationResources(new CommandLineValidationMessages())
@@ -122,6 +124,30 @@ namespace Microsoft.DotNet.Cli
             .DisablePosixBinding()
             .EnableLegacyDoubleDashBehavior()
             .Build();
+
+        private static async Task UseParseErrorReporting(string commandName, InvocationContext context, Func<InvocationContext, Task> next) 
+        {
+            CommandResult currentCommandResult = context.ParseResult.CommandResult;
+            while (currentCommandResult != null && currentCommandResult.Command.Name != commandName)
+            {
+                currentCommandResult = currentCommandResult.Parent as CommandResult;
+            }
+
+            if (currentCommandResult == null)
+            {
+                //different command was launched.
+                await next(context);
+            }
+
+            if (context.ParseResult.Errors.Count > 0)
+            {
+                context.ExitCode = 127; //parse error
+            }
+            else
+            {
+                await next(context);
+            }
+        }
 
         private static void ExceptionHandler(Exception exception, InvocationContext context)
         {
@@ -223,6 +249,14 @@ namespace Microsoft.DotNet.Cli
                 else if (command.Name.Equals(VSTestCommandParser.GetCommand().Name))
                 {
                     new VSTestForwardingApp(helpArgs).Execute();
+                }
+                else if (command is Microsoft.TemplateEngine.Cli.Commands.ICustomHelp helpCommand)
+                {
+                    var blocks = helpCommand.CustomHelpLayout();
+                    foreach (var block in blocks)
+                    {
+                        block(context);
+                    }
                 }
                 else
                 {
