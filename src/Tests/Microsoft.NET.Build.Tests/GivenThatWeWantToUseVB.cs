@@ -185,7 +185,7 @@ namespace Microsoft.NET.Build.Tests
         {
             var testDirectory = _testAssetsManager.CreateTestDirectory().Path;
 
-            var newCommand = new DotnetCommand(Log, "new", "wpf", "-lang", "vb");
+            var newCommand = new DotnetCommand(Log, "new", "wpf", "-lang", "VB");
             newCommand.WorkingDirectory = testDirectory;
             newCommand.Execute().Should().Pass();
 

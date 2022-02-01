@@ -76,7 +76,7 @@ namespace Microsoft.DotNet.New.Tests
 
             new DotnetCommand(Log, "new")
                 .WithWorkingDirectory(rootPath)
-                .Execute($"console", "--debug:ephemeral-hive", "--no-restore", "-n", "vb1", "-lang", "vb")
+                .Execute($"console", "--debug:ephemeral-hive", "--no-restore", "-n", "vb1", "-lang", "VB")
                 .Should().Pass();
 
             string expectedCsprojPath = Path.Combine(rootPath, "vb1", "vb1.vbproj");
